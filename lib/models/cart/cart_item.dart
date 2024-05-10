@@ -18,6 +18,8 @@ class CartItem {
     required this.product,
   });
 
+  double get price => count * product.price;
+
   factory CartItem.fromJson(Map<String, dynamic> json) =>
       _$CartItemFromJson(json);
 
