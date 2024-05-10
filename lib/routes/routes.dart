@@ -4,6 +4,7 @@ import 'package:mobile_app/views/auth/login/login_view.dart';
 import 'package:mobile_app/views/auth/registration/registration_view.dart';
 import 'package:mobile_app/views/cart/cart_view.dart';
 import 'package:mobile_app/views/home/home_view.dart';
+import 'package:mobile_app/views/product/product_view.dart';
 import 'package:mobile_app/views/profile/profile_view.dart';
 
 class Routes {
@@ -18,6 +19,7 @@ class Routes {
       HomeView.routeName: (_) => const HomeView(),
       ProfileView.routeName: (_) => const ProfileView(),
       CartView.routeName: (_) => const CartView(),
+      ProductView.routeName: (_) => const ProductView(),
     };
   }
 }

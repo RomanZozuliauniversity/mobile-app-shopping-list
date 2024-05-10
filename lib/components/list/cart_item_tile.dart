@@ -1,11 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
-import 'package:uuid/uuid.dart';
+import 'package:mobile_app/models/cart/cart_item.dart';
 
 class CartItemTile extends StatelessWidget {
-  const CartItemTile({super.key});
+  final CartItem item;
+
+  final VoidCallback onIncreaseTap;
+  final VoidCallback onDecreaseTap;
+
+  const CartItemTile({
+    required this.item,
+    required this.onIncreaseTap,
+    required this.onDecreaseTap,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,17 +27,15 @@ class CartItemTile extends StatelessWidget {
       child: ListTile(
         style: ListTileStyle.list,
         leading: CircleAvatar(
-          backgroundImage: NetworkImage(
-            'https://picsum.photos/seed/${const Uuid().v4()}/200/300',
-          ),
+          backgroundImage: NetworkImage(item.product.imageUrl),
           radius: 20.h,
         ),
         title: Text(
-          'Product title',
+          item.product.title,
           style: TextStyle(fontSize: 16.sp),
         ),
         subtitle: Text(
-          'Product description',
+          item.product.description,
           style: TextStyle(fontSize: 14.sp),
         ),
         trailing: Row(
@@ -36,7 +43,7 @@ class CartItemTile extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             InkWell(
-              onTap: () {},
+              onTap: onDecreaseTap,
               borderRadius: BorderRadius.circular(100.r),
               child: Padding(
                 padding: EdgeInsets.all(8.w),
@@ -49,12 +56,12 @@ class CartItemTile extends StatelessWidget {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 4.w),
               child: Text(
-                '1',
+                item.count.toString(),
                 style: TextStyle(fontSize: 16.sp),
               ),
             ),
             InkWell(
-              onTap: () {},
+              onTap: onIncreaseTap,
               borderRadius: BorderRadius.circular(100.r),
               child: Padding(
                 padding: EdgeInsets.all(8.w),

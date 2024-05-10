@@ -2,11 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:mobile_app/components/buttons/custom_elevated_button.dart';
-
-import 'package:uuid/uuid.dart';
+import 'package:mobile_app/models/product/product.dart';
 
 class ProductTile extends StatelessWidget {
-  const ProductTile({super.key});
+  final Product product;
+
+  final VoidCallback onTap;
+  final VoidCallback onAddToCartTap;
+
+  const ProductTile({
+    required this.product,
+    required this.onTap,
+    required this.onAddToCartTap,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,23 +27,22 @@ class ProductTile extends StatelessWidget {
       ),
       child: ListTile(
         style: ListTileStyle.list,
+        onTap: onTap,
         leading: CircleAvatar(
-          backgroundImage: NetworkImage(
-            'https://picsum.photos/seed/${const Uuid().v4()}/200/300',
-          ),
+          backgroundImage: NetworkImage(product.imageUrl),
           radius: 20.h,
         ),
         title: Text(
-          'Product title',
+          product.title,
           style: TextStyle(fontSize: 16.sp),
         ),
         subtitle: Text(
-          'Product description',
+          product.description,
           style: TextStyle(fontSize: 14.sp),
         ),
         trailing: CustomElevatedButton(
-          label: '20\$',
-          onPressed: () {},
+          label: '${product.price.toStringAsFixed(1)}\$',
+          onPressed: onAddToCartTap,
         ),
       ),
     );

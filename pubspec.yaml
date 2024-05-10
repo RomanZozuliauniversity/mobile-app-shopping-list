@@ -14,9 +14,11 @@ dependencies:
 
   cupertino_icons: ^1.0.6
 
+  uuid: ^4.4.0
+  fluttertoast: ^8.2.5
   json_annotation: ^4.9.0
   flutter_screenutil: ^5.9.0
-  uuid: ^4.4.0
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:
