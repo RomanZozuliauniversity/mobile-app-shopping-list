@@ -3,16 +3,26 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_app/managers/session/src/session_manager.dart';
 import 'package:mobile_app/models/user/user.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
+import 'package:mobile_app/services/network/network_service.dart';
 import 'package:mobile_app/views/auth/login/login_view.dart';
 import 'package:mobile_app/views/home/home_view.dart';
 import 'package:uuid/uuid.dart';
 
 class RegistrationController {
+  bool _hasConnection = true;
+
   final firstNameController = TextEditingController();
   final secondNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final rePasswordController = TextEditingController();
+
+  void init() {
+    NetworkService()
+        .isConnected()
+        .then((connected) => _hasConnection = connected);
+    NetworkService().subscribe(_onNetworkChanged);
+  }
 
   void dispose() {
     firstNameController.dispose();
@@ -20,6 +30,31 @@ class RegistrationController {
     emailController.dispose();
     passwordController.dispose();
     rePasswordController.dispose();
+
+    NetworkService().unsubscribe(_onNetworkChanged);
+  }
+
+  void _onNetworkChanged(bool hasConnection) => _hasConnection = hasConnection;
+
+  void _onNoNetwork(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('No network', style: TextStyle(fontSize: 16.sp)),
+          content: Text(
+            'You cant perform this action without network connection',
+            style: TextStyle(fontSize: 14.sp),
+          ),
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: Text('Ok', style: TextStyle(fontSize: 14.sp)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   String? validateName(String? value) {
@@ -94,6 +129,8 @@ class RegistrationController {
     }
 
     if (formKey.currentState?.validate() == false) return;
+
+    if (!_hasConnection) return _onNoNetwork(context);
 
     provider.register(user: createUserRecord()).then(
       (authResult) {

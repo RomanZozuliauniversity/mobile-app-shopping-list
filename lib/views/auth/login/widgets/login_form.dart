@@ -25,6 +25,13 @@ class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
 
   @override
+  void initState() {
+    widget.controller.init();
+
+    super.initState();
+  }
+
+  @override
   void dispose() {
     widget.controller.dispose();
 

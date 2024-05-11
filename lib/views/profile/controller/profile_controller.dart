@@ -4,6 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mobile_app/managers/session/src/session_manager.dart';
 import 'package:mobile_app/models/user/user.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
+import 'package:mobile_app/services/network/network_service.dart';
 import 'package:mobile_app/views/auth/login/login_view.dart';
 import 'package:uuid/uuid.dart';
 
@@ -15,10 +16,16 @@ class ProfileController {
   final rePasswordController = TextEditingController();
 
   bool isEditingMode = false;
+  bool _hasConnection = true;
 
   User? _currentUser;
 
   Future<void> init(IUserProvider provider) async {
+    NetworkService()
+        .isConnected()
+        .then((connected) => _hasConnection = connected);
+    NetworkService().subscribe(_onNetworkChanged);
+
     User? user;
     final sessionManager = SessionManager();
 
@@ -40,6 +47,8 @@ class ProfileController {
   }
 
   void dispose() {
+    NetworkService().unsubscribe(_onNetworkChanged);
+
     firstNameController.dispose();
     secondNameController.dispose();
     emailController.dispose();
@@ -47,7 +56,32 @@ class ProfileController {
     rePasswordController.dispose();
   }
 
-  void onEnterEditingMode() {
+  void _onNetworkChanged(bool hasConnection) => _hasConnection = hasConnection;
+
+  void _onNoNetwork(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('No network', style: TextStyle(fontSize: 16.sp)),
+          content: Text(
+            'You cant perform this action without network connection',
+            style: TextStyle(fontSize: 14.sp),
+          ),
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: Text('Ok', style: TextStyle(fontSize: 14.sp)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void onEnterEditingMode(BuildContext context) {
+    if (!_hasConnection) return _onNoNetwork(context);
+
     isEditingMode = !isEditingMode;
     rePasswordController.clear();
   }

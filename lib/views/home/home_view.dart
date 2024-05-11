@@ -43,6 +43,20 @@ class _HomeViewState extends State<HomeView> {
   }
 
   @override
+  void initState() {
+    controller.init();
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -105,6 +119,7 @@ class _HomeViewState extends State<HomeView> {
                   callback: () => setState(() {}),
                 ),
                 onAddToCartTap: () => controller.onAddToCartTap(
+                  context: context,
                   product: product,
                   userProvider: widget.userProvider,
                   cartProvider: widget.cartProvider,
