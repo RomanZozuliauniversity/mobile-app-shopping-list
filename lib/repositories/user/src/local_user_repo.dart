@@ -33,6 +33,7 @@ class LocalUserRepo implements IUserRepo {
   Future<AuthResult> login({
     required String email,
     required String password,
+    bool rememberMe = false,
   }) async {
     final sharedPreferences = await SharedPreferences.getInstance();
 
@@ -56,6 +57,9 @@ class LocalUserRepo implements IUserRepo {
       return AuthResult(
         errorMessage: 'Invalid password',
       );
+    }
+    if (rememberMe) {
+      await sharedPreferences.setString(_activeUserKey, user.email);
     }
 
     return AuthResult(user: user);

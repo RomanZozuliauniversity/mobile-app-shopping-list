@@ -1,18 +1,54 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mobile_app/managers/session/src/session_manager.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
+import 'package:mobile_app/services/network/network_service.dart';
 import 'package:mobile_app/views/auth/registration/registration_view.dart';
 import 'package:mobile_app/views/home/home_view.dart';
 
 class LoginController {
+  bool _hasConnection = true;
+
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
   bool rememberMe = false;
 
+  void init() {
+    NetworkService()
+        .isConnected()
+        .then((connected) => _hasConnection = connected);
+    NetworkService().subscribe(_onNetworkChanged);
+  }
+
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+
+    NetworkService().unsubscribe(_onNetworkChanged);
+  }
+
+  void _onNetworkChanged(bool hasConnection) => _hasConnection = hasConnection;
+
+  void _onNoNetwork(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('No network', style: TextStyle(fontSize: 16.sp)),
+          content: Text(
+            'You cant perform this action without network connection',
+            style: TextStyle(fontSize: 14.sp),
+          ),
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: Text('Ok', style: TextStyle(fontSize: 14.sp)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   String? validateEmail(String? value) {
@@ -56,18 +92,41 @@ class LoginController {
   }) async {
     if (formKey.currentState?.validate() == false) return;
 
+    if (!_hasConnection) return _onNoNetwork(context);
+
     provider
         .login(
       email: emailController.text.trim(),
       password: passwordController.text,
+      rememberMe: rememberMe,
     )
         .then(
       (authResult) {
         if (authResult.errorMessage is String) {
-          return Fluttertoast.showToast(msg: authResult.errorMessage ?? '');
+          return showDialog<void>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text('Error', style: TextStyle(fontSize: 16.sp)),
+                content: Text(
+                  authResult.errorMessage ?? '',
+                  style: TextStyle(fontSize: 14.sp),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: Navigator.of(context).pop,
+                    child: Text('Ok', style: TextStyle(fontSize: 14.sp)),
+                  ),
+                ],
+              );
+            },
+          );
         }
 
-        Navigator.of(context).pushReplacementNamed(HomeView.routeName);
+        SessionManager().userHolder.initialize(user: authResult.user!).then(
+              (value) => Navigator.of(context)
+                  .pushReplacementNamed(HomeView.routeName),
+            );
       },
     );
   }

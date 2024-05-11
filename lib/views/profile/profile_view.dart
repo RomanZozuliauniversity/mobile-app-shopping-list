@@ -55,7 +55,9 @@ class _ProfileViewState extends State<ProfileView> {
         actions: [
           IconButton(
             tooltip: 'Edit',
-            onPressed: () => setState(controller.onEnterEditingMode),
+            onPressed: () => setState(
+              () => controller.onEnterEditingMode(context),
+            ),
             icon: const Icon(CupertinoIcons.pencil_ellipsis_rectangle),
           ),
         ],

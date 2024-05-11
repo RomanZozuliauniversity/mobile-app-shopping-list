@@ -15,8 +15,12 @@ class UserProvider implements IUserProvider {
   Future<User?> fetchUser() => _repo.fetchUser();
 
   @override
-  Future<AuthResult> login({required String email, required String password}) =>
-      _repo.login(email: email, password: password);
+  Future<AuthResult> login({
+    required String email,
+    required String password,
+    bool rememberMe = false,
+  }) =>
+      _repo.login(email: email, password: password, rememberMe: rememberMe);
 
   @override
   Future<AuthResult> register({required User user}) =>

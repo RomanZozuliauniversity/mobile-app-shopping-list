@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mobile_app/managers/session/src/session_manager.dart';
 import 'package:mobile_app/models/user/user.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
+import 'package:mobile_app/services/network/network_service.dart';
 import 'package:mobile_app/views/auth/login/login_view.dart';
 import 'package:uuid/uuid.dart';
 
@@ -13,11 +16,22 @@ class ProfileController {
   final rePasswordController = TextEditingController();
 
   bool isEditingMode = false;
+  bool _hasConnection = true;
 
   User? _currentUser;
 
   Future<void> init(IUserProvider provider) async {
-    final user = await provider.fetchUser();
+    NetworkService()
+        .isConnected()
+        .then((connected) => _hasConnection = connected);
+    NetworkService().subscribe(_onNetworkChanged);
+
+    User? user;
+    final sessionManager = SessionManager();
+
+    if (sessionManager.userHolder.hasUser) {
+      user = sessionManager.userHolder.currentUser;
+    }
 
     if (user is! User) {
       Fluttertoast.showToast(msg: 'Failed to fetch user');
@@ -33,6 +47,8 @@ class ProfileController {
   }
 
   void dispose() {
+    NetworkService().unsubscribe(_onNetworkChanged);
+
     firstNameController.dispose();
     secondNameController.dispose();
     emailController.dispose();
@@ -40,7 +56,32 @@ class ProfileController {
     rePasswordController.dispose();
   }
 
-  void onEnterEditingMode() {
+  void _onNetworkChanged(bool hasConnection) => _hasConnection = hasConnection;
+
+  void _onNoNetwork(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('No network', style: TextStyle(fontSize: 16.sp)),
+          content: Text(
+            'You cant perform this action without network connection',
+            style: TextStyle(fontSize: 14.sp),
+          ),
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: Text('Ok', style: TextStyle(fontSize: 14.sp)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void onEnterEditingMode(BuildContext context) {
+    if (!_hasConnection) return _onNoNetwork(context);
+
     isEditingMode = !isEditingMode;
     rePasswordController.clear();
   }
@@ -123,13 +164,48 @@ class ProfileController {
     if (formKey.currentState?.validate() == false) return;
 
     provider.updateUser(user: createUserRecord()).then(
-      (authResult) {
+      (_) {
+        final sessionManager = SessionManager();
+
+        if (_currentUser is User) {
+          sessionManager.userHolder.initialize(user: _currentUser!);
+        }
+
         return Fluttertoast.showToast(msg: 'User record updated');
       },
     );
   }
 
   void onSignOutTap(BuildContext context) {
-    Navigator.of(context).pushReplacementNamed(LoginView.routeName);
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Are you sure?', style: TextStyle(fontSize: 16.sp)),
+          content: Text(
+            'You are going to sign out, are you sure?',
+            style: TextStyle(fontSize: 14.sp),
+          ),
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: Text('Nope', style: TextStyle(fontSize: 14.sp)),
+            ),
+            TextButton(
+              onPressed: () {
+                SessionManager().endSession().then(
+                      (value) => Navigator.of(context)
+                          .pushReplacementNamed(LoginView.routeName),
+                    );
+              },
+              child: Text(
+                'Sign out',
+                style: TextStyle(color: Colors.red, fontSize: 14.sp),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
