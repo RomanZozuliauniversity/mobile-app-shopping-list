@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mobile_app/managers/session/src/session_manager.dart';
 import 'package:mobile_app/models/user/user.dart';
@@ -142,9 +143,35 @@ class ProfileController {
   }
 
   void onSignOutTap(BuildContext context) {
-    SessionManager().endSession().then(
-          (value) =>
-              Navigator.of(context).pushReplacementNamed(LoginView.routeName),
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Are you sure?', style: TextStyle(fontSize: 16.sp)),
+          content: Text(
+            'You are going to sign out, are you sure?',
+            style: TextStyle(fontSize: 14.sp),
+          ),
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: Text('Nope', style: TextStyle(fontSize: 14.sp)),
+            ),
+            TextButton(
+              onPressed: () {
+                SessionManager().endSession().then(
+                      (value) => Navigator.of(context)
+                          .pushReplacementNamed(LoginView.routeName),
+                    );
+              },
+              child: Text(
+                'Sign out',
+                style: TextStyle(color: Colors.red, fontSize: 14.sp),
+              ),
+            ),
+          ],
         );
+      },
+    );
   }
 }

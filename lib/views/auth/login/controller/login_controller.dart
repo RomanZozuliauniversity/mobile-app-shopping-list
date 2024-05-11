@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_app/managers/session/src/session_manager.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
 import 'package:mobile_app/views/auth/registration/registration_view.dart';
@@ -66,7 +66,24 @@ class LoginController {
         .then(
       (authResult) {
         if (authResult.errorMessage is String) {
-          return Fluttertoast.showToast(msg: authResult.errorMessage ?? '');
+          return showDialog<void>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text('Error', style: TextStyle(fontSize: 16.sp)),
+                content: Text(
+                  authResult.errorMessage ?? '',
+                  style: TextStyle(fontSize: 14.sp),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: Navigator.of(context).pop,
+                    child: Text('Ok', style: TextStyle(fontSize: 14.sp)),
+                  ),
+                ],
+              );
+            },
+          );
         }
 
         SessionManager().userHolder.initialize(user: authResult.user!).then(
