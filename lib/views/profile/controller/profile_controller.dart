@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mobile_app/managers/session/src/session_manager.dart';
 import 'package:mobile_app/models/user/user.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
 import 'package:mobile_app/views/auth/login/login_view.dart';
@@ -17,7 +18,12 @@ class ProfileController {
   User? _currentUser;
 
   Future<void> init(IUserProvider provider) async {
-    final user = await provider.fetchUser();
+    User? user;
+    final sessionManager = SessionManager();
+
+    if (sessionManager.userHolder.hasUser) {
+      user = sessionManager.userHolder.currentUser;
+    }
 
     if (user is! User) {
       Fluttertoast.showToast(msg: 'Failed to fetch user');
@@ -123,13 +129,22 @@ class ProfileController {
     if (formKey.currentState?.validate() == false) return;
 
     provider.updateUser(user: createUserRecord()).then(
-      (authResult) {
+      (_) {
+        final sessionManager = SessionManager();
+
+        if (_currentUser is User) {
+          sessionManager.userHolder.initialize(user: _currentUser!);
+        }
+
         return Fluttertoast.showToast(msg: 'User record updated');
       },
     );
   }
 
   void onSignOutTap(BuildContext context) {
-    Navigator.of(context).pushReplacementNamed(LoginView.routeName);
+    SessionManager().endSession().then(
+          (value) =>
+              Navigator.of(context).pushReplacementNamed(LoginView.routeName),
+        );
   }
 }

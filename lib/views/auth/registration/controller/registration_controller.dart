@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mobile_app/managers/session/src/session_manager.dart';
 import 'package:mobile_app/models/user/user.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
 import 'package:mobile_app/views/auth/login/login_view.dart';
@@ -100,7 +101,10 @@ class RegistrationController {
           return Fluttertoast.showToast(msg: authResult.errorMessage ?? '');
         }
 
-        Navigator.of(context).pushReplacementNamed(HomeView.routeName);
+        SessionManager().startSession().then(
+              (value) => Navigator.of(context)
+                  .pushReplacementNamed(HomeView.routeName),
+            );
       },
     );
   }

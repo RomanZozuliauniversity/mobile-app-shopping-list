@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mobile_app/managers/session/src/session_manager.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
 import 'package:mobile_app/views/auth/registration/registration_view.dart';
 import 'package:mobile_app/views/home/home_view.dart';
@@ -60,6 +61,7 @@ class LoginController {
         .login(
       email: emailController.text.trim(),
       password: passwordController.text,
+      rememberMe: rememberMe,
     )
         .then(
       (authResult) {
@@ -67,7 +69,10 @@ class LoginController {
           return Fluttertoast.showToast(msg: authResult.errorMessage ?? '');
         }
 
-        Navigator.of(context).pushReplacementNamed(HomeView.routeName);
+        SessionManager().userHolder.initialize(user: authResult.user!).then(
+              (value) => Navigator.of(context)
+                  .pushReplacementNamed(HomeView.routeName),
+            );
       },
     );
   }
