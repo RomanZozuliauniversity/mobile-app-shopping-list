@@ -2,13 +2,14 @@ import 'package:mobile_app/models/cart/cart_item.dart';
 import 'package:mobile_app/models/product/product.dart';
 import 'package:mobile_app/providers/cart/interface/i_cart_provider.dart';
 import 'package:mobile_app/repositories/cart/interface/i_cart_repo.dart';
-import 'package:mobile_app/repositories/cart/src/local_cart_repo.dart';
+import 'package:mobile_app/repositories/cart/src/firebase_cart_repo.dart';
+// import 'package:mobile_app/repositories/cart/src/local_cart_repo.dart';
 
 class CartProvider implements ICartProvider {
   final ICartRepo _repo;
 
   const CartProvider({
-    ICartRepo repo = const LocalCartRepo(),
+    ICartRepo repo = const FirebaseCartRepo(),
   }) : _repo = repo;
 
   @override

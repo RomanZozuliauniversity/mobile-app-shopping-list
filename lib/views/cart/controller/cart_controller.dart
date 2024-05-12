@@ -55,6 +55,6 @@ class CartController {
     if (_currentUser is! User) return;
 
     item.count++;
-    cartProvider.updateCartItem(uuid: _currentUser!.uid, item: item);
+    await cartProvider.updateCartItem(uuid: _currentUser!.uid, item: item);
   }
 }

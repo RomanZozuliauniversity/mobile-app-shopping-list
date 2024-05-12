@@ -2,13 +2,14 @@ import 'package:mobile_app/models/auth/auth_result.dart';
 import 'package:mobile_app/models/user/user.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
 import 'package:mobile_app/repositories/user/interface/i_user_repo.dart';
-import 'package:mobile_app/repositories/user/src/local_user_repo.dart';
+import 'package:mobile_app/repositories/user/src/firebase_user_repo.dart';
+// import 'package:mobile_app/repositories/user/src/local_user_repo.dart';
 
 class UserProvider implements IUserProvider {
   final IUserRepo _repo;
 
   const UserProvider({
-    IUserRepo repo = const LocalUserRepo(),
+    IUserRepo repo = const FirebaseUserRepo(),
   }) : _repo = repo;
 
   @override
