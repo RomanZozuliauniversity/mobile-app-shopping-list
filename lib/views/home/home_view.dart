@@ -26,6 +26,11 @@ class HomeView extends StatelessWidget {
               onPressed: controller.onCartTap,
               icon: const Icon(CupertinoIcons.cart),
             ),
+            IconButton(
+              tooltip: 'Flash light',
+              onPressed: controller.onToggleLights,
+              icon: const Icon(CupertinoIcons.lightbulb),
+            ),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
