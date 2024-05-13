@@ -16,7 +16,7 @@ class LoginController {
 
   void init() {
     NetworkService()
-        .isConnected()
+        .isConnected
         .then((connected) => _hasConnection = connected);
     NetworkService().subscribe(_onNetworkChanged);
   }
