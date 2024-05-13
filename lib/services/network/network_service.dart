@@ -15,7 +15,7 @@ class NetworkService {
     required Connectivity connectivity,
   }) : _connectivity = connectivity;
 
-  Future<bool> isConnected() async {
+  Future<bool> get isConnected async {
     final results = await _connectivity.checkConnectivity();
 
     return results.last != ConnectivityResult.none &&

@@ -85,7 +85,7 @@ class ProductController {
     required GlobalKey<FormState> formKey,
     required BuildContext context,
     required IProductsProvider provider,
-  }) {
+  }) async {
     void onSaveFinished() {
       Fluttertoast.showToast(msg: 'Product saved');
 
@@ -121,15 +121,8 @@ class ProductController {
 
     if (formKey.currentState?.validate() == false) return;
 
-    if (product is Product) {
-      provider
-          .updateProduct(product: createProduct())
-          .then((value) => onSaveFinished());
-    } else {
-      provider
-          .addProduct(product: createProduct())
-          .then((value) => onSaveFinished());
-    }
+    await provider.addProduct(product: createProduct());
+    onSaveFinished();
   }
 
   void onDeleteTap({

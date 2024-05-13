@@ -22,7 +22,7 @@ class ProfileController {
 
   Future<void> init(IUserProvider provider) async {
     NetworkService()
-        .isConnected()
+        .isConnected
         .then((connected) => _hasConnection = connected);
     NetworkService().subscribe(_onNetworkChanged);
 

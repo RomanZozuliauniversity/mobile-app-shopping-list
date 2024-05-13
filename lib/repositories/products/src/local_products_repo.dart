@@ -13,10 +13,17 @@ class LocalProductsRepo implements IProductsRepo {
   Future<void> addProduct({required Product product}) async {
     final sharedPreferences = await SharedPreferences.getInstance();
 
-    final products = sharedPreferences.getStringList(_productsKey) ?? [];
-    products.add(jsonEncode(product.toJson()));
+    var productsJson = sharedPreferences.getStringList(_productsKey) ?? [];
+    final products = productsJson
+        .map((e) => Product.fromJson(jsonDecode(e) as Map<String, dynamic>))
+        .toList();
 
-    sharedPreferences.setStringList(_productsKey, products);
+    if (products.indexWhere((e) => e.uid == product.uid) < 0) {
+      products.add(product);
+    }
+
+    productsJson = products.map((e) => jsonEncode(e.toJson())).toList();
+    sharedPreferences.setStringList(_productsKey, productsJson);
   }
 
   @override
