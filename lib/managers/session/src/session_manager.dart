@@ -1,24 +1,13 @@
 import 'package:logger/logger.dart';
 import 'package:mobile_app/managers/session/interface/i_session_manager.dart';
 import 'package:mobile_app/managers/session/interface/i_user_holder.dart';
-import 'package:mobile_app/managers/session/src/user_holder.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
-import 'package:mobile_app/providers/user/src/user_provider.dart';
 
 class SessionManager implements ISessionManager {
   final IUserHolder _userHolder;
   final IUserProvider _provider;
 
-  static final SessionManager _singleton = SessionManager._internal(
-    userHolder: UserHolder(),
-    provider: const UserProvider(),
-  );
-
-  factory SessionManager() {
-    return _singleton;
-  }
-
-  SessionManager._internal({
+  SessionManager({
     required IUserHolder userHolder,
     required IUserProvider provider,
   })  : _userHolder = userHolder,

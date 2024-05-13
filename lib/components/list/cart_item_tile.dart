@@ -6,8 +6,8 @@ import 'package:mobile_app/models/cart/cart_item.dart';
 class CartItemTile extends StatelessWidget {
   final CartItem item;
 
-  final VoidCallback onIncreaseTap;
-  final VoidCallback onDecreaseTap;
+  final ValueChanged<CartItem> onIncreaseTap;
+  final ValueChanged<CartItem> onDecreaseTap;
 
   const CartItemTile({
     required this.item,
@@ -43,7 +43,7 @@ class CartItemTile extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             InkWell(
-              onTap: onDecreaseTap,
+              onTap: () => onDecreaseTap(item),
               borderRadius: BorderRadius.circular(100.r),
               child: Padding(
                 padding: EdgeInsets.all(8.w),
@@ -61,7 +61,7 @@ class CartItemTile extends StatelessWidget {
               ),
             ),
             InkWell(
-              onTap: onIncreaseTap,
+              onTap: () => onIncreaseTap(item),
               borderRadius: BorderRadius.circular(100.r),
               child: Padding(
                 padding: EdgeInsets.all(8.w),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 
 import 'package:mobile_app/routes/routes.dart';
 
@@ -17,7 +18,7 @@ class App extends StatelessWidget {
       designSize: const Size(430, 932),
       minTextAdapt: true,
       splitScreenMode: true,
-      builder: (_, child) => MaterialApp(
+      builder: (_, child) => GetMaterialApp(
         title: 'Shopping List',
         theme: ThemeData(
           primaryColor: Colors.blue,

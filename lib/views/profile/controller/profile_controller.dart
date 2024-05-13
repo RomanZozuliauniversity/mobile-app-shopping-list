@@ -1,96 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:mobile_app/managers/session/src/session_manager.dart';
+import 'package:get/get.dart';
+import 'package:mobile_app/components/dialogs/no_network_dialog.dart';
+import 'package:mobile_app/managers/session/interface/i_session_manager.dart';
 import 'package:mobile_app/models/user/user.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
-import 'package:mobile_app/services/network/network_service.dart';
+import 'package:mobile_app/services/network/interface/i_network_service.dart';
 import 'package:mobile_app/views/auth/login/login_view.dart';
+import 'package:mobile_app/views/home/home_view.dart';
 import 'package:uuid/uuid.dart';
 
-class ProfileController {
+class ProfileController extends GetxController {
+  final _networkService = Get.find<INetworkService>(tag: 'network-service');
+  final _sessionManager = Get.find<ISessionManager>(tag: 'session-manager');
+  final _userProvider = Get.find<IUserProvider>(tag: 'user-provider');
+
+  final _formKey = GlobalKey<FormState>();
+  final _isEditingMode = false.obs;
+
   final firstNameController = TextEditingController();
   final secondNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final rePasswordController = TextEditingController();
 
-  bool isEditingMode = false;
-  bool _hasConnection = true;
+  GlobalKey<FormState> get formKey => _formKey;
+  RxBool get isEditingMode => _isEditingMode;
 
-  User? _currentUser;
-
-  Future<void> init(IUserProvider provider) async {
-    NetworkService()
-        .isConnected
-        .then((connected) => _hasConnection = connected);
-    NetworkService().subscribe(_onNetworkChanged);
-
-    User? user;
-    final sessionManager = SessionManager();
-
-    if (sessionManager.userHolder.hasUser) {
-      user = sessionManager.userHolder.currentUser;
-    }
+  @override
+  void onInit() {
+    final user = _sessionManager.userHolder.currentUser;
 
     if (user is! User) {
       Fluttertoast.showToast(msg: 'Failed to fetch user');
       return;
     }
 
-    _currentUser = user;
-
     firstNameController.text = user.firstName;
     secondNameController.text = user.secondName;
     emailController.text = user.email;
     passwordController.text = user.password;
+
+    super.onInit();
   }
 
-  void dispose() {
-    NetworkService().unsubscribe(_onNetworkChanged);
-
+  @override
+  void onClose() {
     firstNameController.dispose();
     secondNameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     rePasswordController.dispose();
+
+    super.onClose();
   }
 
-  void _onNetworkChanged(bool hasConnection) => _hasConnection = hasConnection;
+  void onEnterEditingMode() {
+    if (_networkService.isConnected.isFalse) {
+      Get.dialog<void>(const NoNetworkDialog());
+      return;
+    }
 
-  void _onNoNetwork(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('No network', style: TextStyle(fontSize: 16.sp)),
-          content: Text(
-            'You cant perform this action without network connection',
-            style: TextStyle(fontSize: 14.sp),
-          ),
-          actions: [
-            TextButton(
-              onPressed: Navigator.of(context).pop,
-              child: Text('Ok', style: TextStyle(fontSize: 14.sp)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void onEnterEditingMode(BuildContext context) {
-    if (!_hasConnection) return _onNoNetwork(context);
-
-    isEditingMode = !isEditingMode;
     rePasswordController.clear();
+    _isEditingMode.value = !_isEditingMode.value;
   }
 
   String? validateName(String? value) {
     if (value is! String || value.trim().isEmpty) {
       return 'Name field is required';
     }
-    if (!RegExp(r'^[A-Za-z]+$').hasMatch(value)) {
+    if (!value.isAlphabetOnly) {
       return 'May contain only alphabetic characters';
     }
 
@@ -102,16 +82,7 @@ class ProfileController {
       return 'Email field is required';
     }
 
-    const pattern = r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'"
-        r'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-'
-        r'\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*'
-        r'[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4]'
-        r'[0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9]'
-        r'[0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\'
-        r'x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])';
-
-    final regex = RegExp(pattern);
-    if (!regex.hasMatch(value)) return 'Enter a valid email address';
+    if (!value.isEmail) return 'Enter a valid email address';
 
     return null;
   }
@@ -138,13 +109,12 @@ class ProfileController {
     return null;
   }
 
-  Future<void> onUpdateUser({
-    required GlobalKey<FormState> formKey,
-    required IUserProvider provider,
-  }) async {
+  Future<void> onUpdateUser() async {
     User createUserRecord() {
-      if (_currentUser is User) {
-        return _currentUser!.copyWith(
+      final user = _sessionManager.userHolder.currentUser;
+
+      if (user is User) {
+        return user.copyWith(
           email: emailController.text.trim(),
           password: passwordController.text,
           firstName: firstNameController.text.trim(),
@@ -163,49 +133,45 @@ class ProfileController {
 
     if (formKey.currentState?.validate() == false) return;
 
-    provider.updateUser(user: createUserRecord()).then(
-      (_) {
-        final sessionManager = SessionManager();
+    final user = createUserRecord();
 
-        if (_currentUser is User) {
-          sessionManager.userHolder.initialize(user: _currentUser!);
-        }
+    await _userProvider.updateUser(user: user);
+    _sessionManager.userHolder.initialize(user: user);
 
-        return Fluttertoast.showToast(msg: 'User record updated');
-      },
+    Fluttertoast.showToast(msg: 'User record updated');
+  }
+
+  void onSignOutTap() {
+    Get.dialog<void>(
+      AlertDialog(
+        title: Text('Are you sure?', style: TextStyle(fontSize: 16.sp)),
+        content: Text(
+          'You are going to sign out, are you sure?',
+          style: TextStyle(fontSize: 14.sp),
+        ),
+        actions: [
+          TextButton(
+            onPressed: Get.back<void>,
+            child: Text('Nope', style: TextStyle(fontSize: 14.sp)),
+          ),
+          TextButton(
+            onPressed: () async {
+              await _sessionManager.endSession();
+              Get.offNamed<void>(LoginView.routeName);
+            },
+            child: Text(
+              'Sign out',
+              style: TextStyle(color: Colors.red, fontSize: 14.sp),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  void onSignOutTap(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Are you sure?', style: TextStyle(fontSize: 16.sp)),
-          content: Text(
-            'You are going to sign out, are you sure?',
-            style: TextStyle(fontSize: 14.sp),
-          ),
-          actions: [
-            TextButton(
-              onPressed: Navigator.of(context).pop,
-              child: Text('Nope', style: TextStyle(fontSize: 14.sp)),
-            ),
-            TextButton(
-              onPressed: () {
-                SessionManager().endSession().then(
-                      (value) => Navigator.of(context)
-                          .pushReplacementNamed(LoginView.routeName),
-                    );
-              },
-              child: Text(
-                'Sign out',
-                style: TextStyle(color: Colors.red, fontSize: 14.sp),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+  void onNavigationTap(int index) {
+    if (index == 1) return;
+
+    Get.offNamed<void>(HomeView.routeName);
   }
 }

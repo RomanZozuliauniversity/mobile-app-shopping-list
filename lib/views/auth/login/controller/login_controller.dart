@@ -1,54 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:mobile_app/managers/session/src/session_manager.dart';
+import 'package:get/get.dart';
+import 'package:mobile_app/components/dialogs/error_dialog.dart';
+import 'package:mobile_app/components/dialogs/no_network_dialog.dart';
+import 'package:mobile_app/managers/session/interface/i_session_manager.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
-import 'package:mobile_app/services/network/network_service.dart';
+import 'package:mobile_app/services/network/interface/i_network_service.dart';
 import 'package:mobile_app/views/auth/registration/registration_view.dart';
 import 'package:mobile_app/views/home/home_view.dart';
 
-class LoginController {
-  bool _hasConnection = true;
+class LoginController extends GetxController {
+  final _networkService = Get.find<INetworkService>(tag: 'network-service');
+  final _userProvider = Get.find<IUserProvider>(tag: 'user-provider');
+  final _sessionManager = Get.find<ISessionManager>(tag: 'session-manager');
+
+  final _formKey = GlobalKey<FormState>();
+  final _rememberMe = false.obs;
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  bool rememberMe = false;
+  GlobalKey<FormState> get formKey => _formKey;
+  RxBool get rememberMe => _rememberMe;
 
-  void init() {
-    NetworkService()
-        .isConnected
-        .then((connected) => _hasConnection = connected);
-    NetworkService().subscribe(_onNetworkChanged);
-  }
-
-  void dispose() {
+  @override
+  void onClose() {
     emailController.dispose();
     passwordController.dispose();
 
-    NetworkService().unsubscribe(_onNetworkChanged);
-  }
-
-  void _onNetworkChanged(bool hasConnection) => _hasConnection = hasConnection;
-
-  void _onNoNetwork(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('No network', style: TextStyle(fontSize: 16.sp)),
-          content: Text(
-            'You cant perform this action without network connection',
-            style: TextStyle(fontSize: 14.sp),
-          ),
-          actions: [
-            TextButton(
-              onPressed: Navigator.of(context).pop,
-              child: Text('Ok', style: TextStyle(fontSize: 14.sp)),
-            ),
-          ],
-        );
-      },
-    );
+    super.onClose();
   }
 
   String? validateEmail(String? value) {
@@ -56,16 +35,7 @@ class LoginController {
       return 'Email field is required';
     }
 
-    const pattern = r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'"
-        r'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-'
-        r'\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*'
-        r'[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4]'
-        r'[0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9]'
-        r'[0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\'
-        r'x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])';
-
-    final regex = RegExp(pattern);
-    if (!regex.hasMatch(value)) return 'Enter a valid email address';
+    if (!value.isEmail) return 'Enter a valid email address';
 
     return null;
   }
@@ -81,53 +51,31 @@ class LoginController {
     return null;
   }
 
-  void onRegistrationTap(BuildContext context) {
-    Navigator.of(context).pushReplacementNamed(RegistrationView.routeName);
-  }
+  void onRememberMeChanged(bool? value) => _rememberMe.value = value ?? false;
 
-  Future<void> onLoginTap({
-    required GlobalKey<FormState> formKey,
-    required BuildContext context,
-    required IUserProvider provider,
-  }) async {
+  void onRegistrationTap() => Get.offNamed<void>(RegistrationView.routeName);
+
+  Future<void> onLoginTap() async {
     if (formKey.currentState?.validate() == false) return;
 
-    if (!_hasConnection) return _onNoNetwork(context);
+    if (_networkService.isConnected.isFalse) {
+      return Get.dialog(const NoNetworkDialog());
+    }
 
-    provider
-        .login(
+    final authResult = await _userProvider.login(
       email: emailController.text.trim(),
       password: passwordController.text,
-      rememberMe: rememberMe,
-    )
-        .then(
-      (authResult) {
-        if (authResult.errorMessage is String) {
-          return showDialog<void>(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: Text('Error', style: TextStyle(fontSize: 16.sp)),
-                content: Text(
-                  authResult.errorMessage ?? '',
-                  style: TextStyle(fontSize: 14.sp),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: Navigator.of(context).pop,
-                    child: Text('Ok', style: TextStyle(fontSize: 14.sp)),
-                  ),
-                ],
-              );
-            },
-          );
-        }
-
-        SessionManager().userHolder.initialize(user: authResult.user!).then(
-              (value) => Navigator.of(context)
-                  .pushReplacementNamed(HomeView.routeName),
-            );
-      },
+      rememberMe: rememberMe.isTrue,
     );
+
+    if (authResult.errorMessage is String) {
+      return Get.dialog<void>(
+        ErrorDialog(message: authResult.errorMessage!),
+      );
+    }
+
+    await _sessionManager.userHolder.initialize(user: authResult.user!);
+
+    Get.offNamed<void>(HomeView.routeName);
   }
 }

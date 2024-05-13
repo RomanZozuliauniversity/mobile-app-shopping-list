@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get/get.dart';
 import 'package:mobile_app/models/product/product.dart';
 import 'package:mobile_app/providers/products/interface/i_products_provider.dart';
 import 'package:uuid/uuid.dart';
 
-class ProductController {
+class ProductController extends GetxController {
+  final _productsProvider =
+      Get.find<IProductsProvider>(tag: 'products-provider');
+
+  final _formKey = GlobalKey<FormState>();
+  final _isEditingMode = false.obs;
+
   final imageUrlController = TextEditingController();
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
@@ -13,10 +20,12 @@ class ProductController {
   Product? product;
   VoidCallback? callback;
 
-  bool isEditingMode = false;
+  GlobalKey<FormState> get formKey => _formKey;
+  RxBool get isEditingMode => _isEditingMode;
 
-  Future<void> init(BuildContext context) async {
-    final arguments = ModalRoute.of(context)?.settings.arguments;
+  @override
+  Future<void> onInit() async {
+    final arguments = Get.arguments;
 
     if (arguments == null) return;
     if (arguments is! Map<String, dynamic>) return;
@@ -30,13 +39,18 @@ class ProductController {
     titleController.text = product?.title ?? '';
     descriptionController.text = product?.description ?? '';
     priceController.text = product?.price.toStringAsFixed(1) ?? '';
+
+    super.onInit();
   }
 
-  void dispose() {
+  @override
+  void onClose() {
     imageUrlController.dispose();
     titleController.dispose();
     descriptionController.dispose();
     priceController.dispose();
+
+    super.onClose();
   }
 
   String? validateImageUrl(String? value) {
@@ -78,20 +92,16 @@ class ProductController {
   }
 
   void onEnterEditingMode() {
-    isEditingMode = !isEditingMode;
+    _isEditingMode.value = !isEditingMode.value;
   }
 
-  void onSaveTap({
-    required GlobalKey<FormState> formKey,
-    required BuildContext context,
-    required IProductsProvider provider,
-  }) async {
+  void onSaveTap() async {
     void onSaveFinished() {
       Fluttertoast.showToast(msg: 'Product saved');
 
       if (callback is VoidCallback) callback!();
 
-      Navigator.of(context).pop();
+      Get.back<void>();
     }
 
     Product createProduct() {
@@ -121,22 +131,19 @@ class ProductController {
 
     if (formKey.currentState?.validate() == false) return;
 
-    await provider.addProduct(product: createProduct());
+    await _productsProvider.addProduct(product: createProduct());
     onSaveFinished();
   }
 
-  void onDeleteTap({
-    required BuildContext context,
-    required IProductsProvider provider,
-  }) {
+  void onDeleteTap() async {
     if (product is! Product) return;
 
-    provider.removeProduct(product: product!).then((value) {
-      Fluttertoast.showToast(msg: 'Product deleted');
+    await _productsProvider.removeProduct(product: product!);
 
-      if (callback is VoidCallback) callback!();
+    Fluttertoast.showToast(msg: 'Product deleted');
 
-      Navigator.of(context).pop();
-    });
+    if (callback is VoidCallback) callback!();
+
+    Get.back<void>();
   }
 }

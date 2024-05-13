@@ -1,9 +1,10 @@
+import 'package:get/get.dart';
 import 'package:mobile_app/models/product/product.dart';
 import 'package:mobile_app/providers/products/interface/i_products_provider.dart';
 import 'package:mobile_app/repositories/products/interface/i_products_repo.dart';
 import 'package:mobile_app/repositories/products/src/firebase_products_repo.dart';
 import 'package:mobile_app/repositories/products/src/local_products_repo.dart';
-import 'package:mobile_app/services/network/network_service.dart';
+import 'package:mobile_app/services/network/interface/i_network_service.dart';
 
 class ProductsProvider implements IProductsProvider {
   final IProductsRepo _repo;
@@ -14,8 +15,10 @@ class ProductsProvider implements IProductsProvider {
   }) : _repo = repo;
 
   @override
-  Future<void> addProduct({required Product product}) async {
-    if (await NetworkService().isConnected) {
+  Future<void> addProduct({required Product product}) {
+    final networkService = Get.find<INetworkService>(tag: 'network-service');
+
+    if (networkService.isConnected.isTrue) {
       _localRepo.addProduct(product: product);
       return _repo.addProduct(product: product);
     }
@@ -25,7 +28,9 @@ class ProductsProvider implements IProductsProvider {
 
   @override
   Future<List<Product>> fetchProducts() async {
-    if (await NetworkService().isConnected) {
+    final networkService = Get.find<INetworkService>(tag: 'network-service');
+
+    if (networkService.isConnected.isTrue) {
       final products = await _repo.fetchProducts();
 
       for (var product in products) {
@@ -40,7 +45,9 @@ class ProductsProvider implements IProductsProvider {
 
   @override
   Future<void> removeProduct({required Product product}) async {
-    if (await NetworkService().isConnected) {
+    final networkService = Get.find<INetworkService>(tag: 'network-service');
+
+    if (networkService.isConnected.isTrue) {
       _localRepo.removeProduct(product: product);
       return _repo.removeProduct(product: product);
     }
@@ -48,7 +55,9 @@ class ProductsProvider implements IProductsProvider {
 
   @override
   Future<void> updateProduct({required Product product}) async {
-    if (await NetworkService().isConnected) {
+    final networkService = Get.find<INetworkService>(tag: 'network-service');
+
+    if (networkService.isConnected.isTrue) {
       _localRepo.updateProduct(product: product);
       return _repo.updateProduct(product: product);
     }
