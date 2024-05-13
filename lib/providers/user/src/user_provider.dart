@@ -1,10 +1,11 @@
+import 'package:get/get.dart';
 import 'package:mobile_app/models/auth/auth_result.dart';
 import 'package:mobile_app/models/user/user.dart';
 import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
 import 'package:mobile_app/repositories/user/interface/i_user_repo.dart';
 import 'package:mobile_app/repositories/user/src/firebase_user_repo.dart';
 import 'package:mobile_app/repositories/user/src/local_user_repo.dart';
-import 'package:mobile_app/services/network/network_service.dart';
+import 'package:mobile_app/services/network/interface/i_network_service.dart';
 
 class UserProvider implements IUserProvider {
   final IUserRepo _repo;
@@ -16,7 +17,9 @@ class UserProvider implements IUserProvider {
 
   @override
   Future<User?> fetchUser() async {
-    if (await NetworkService().isConnected) return _repo.fetchUser();
+    final networkService = Get.find<INetworkService>(tag: 'network-service');
+
+    if (networkService.isConnected.isTrue) return _repo.fetchUser();
 
     return _localRepo.fetchUser();
   }
@@ -26,8 +29,10 @@ class UserProvider implements IUserProvider {
     required String email,
     required String password,
     bool rememberMe = false,
-  }) async {
-    if (await NetworkService().isConnected) {
+  }) {
+    final networkService = Get.find<INetworkService>(tag: 'network-service');
+
+    if (networkService.isConnected.isTrue) {
       _localRepo.login(
         email: email,
         password: password,
@@ -49,8 +54,10 @@ class UserProvider implements IUserProvider {
   }
 
   @override
-  Future<AuthResult> register({required User user}) async {
-    if (await NetworkService().isConnected) {
+  Future<AuthResult> register({required User user}) {
+    final networkService = Get.find<INetworkService>(tag: 'network-service');
+
+    if (networkService.isConnected.isTrue) {
       _localRepo.register(user: user);
       return _repo.register(user: user);
     }

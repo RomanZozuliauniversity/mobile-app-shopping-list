@@ -1,108 +1,82 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get/get.dart';
+import 'package:mobile_app/components/dialogs/no_network_dialog.dart';
+import 'package:mobile_app/managers/session/interface/i_session_manager.dart';
 import 'package:mobile_app/models/product/product.dart';
 import 'package:mobile_app/models/user/user.dart';
 import 'package:mobile_app/providers/cart/interface/i_cart_provider.dart';
 import 'package:mobile_app/providers/products/interface/i_products_provider.dart';
-import 'package:mobile_app/providers/user/interface/i_user_provider.dart';
-import 'package:mobile_app/services/network/network_service.dart';
+import 'package:mobile_app/services/network/interface/i_network_service.dart';
 import 'package:mobile_app/views/cart/cart_view.dart';
 import 'package:mobile_app/views/product/product_view.dart';
+import 'package:mobile_app/views/profile/profile_view.dart';
 
-class HomeController {
-  User? _currentUser;
-  bool _hasConnection = true;
+class HomeController extends GetxController {
+  final _networkService = Get.find<INetworkService>(tag: 'network-service');
+  final _cartProvider = Get.find<ICartProvider>(tag: 'cart-provider');
+  final _productsProvider =
+      Get.find<IProductsProvider>(tag: 'products-provider');
+  final _sessionManager = Get.find<ISessionManager>(tag: 'session-manager');
 
-  void init() {
-    NetworkService()
-        .isConnected
-        .then((connected) => _hasConnection = connected);
-    NetworkService().subscribe(_onNetworkChanged);
+  Future<List<Product>> get products => _productsProvider.fetchProducts();
+
+  void onCartTap() {
+    if (_networkService.isConnected.isFalse) {
+      Get.dialog<void>(const NoNetworkDialog());
+      return;
+    }
+
+    Get.toNamed<void>(CartView.routeName);
   }
 
-  void dispose() {
-    NetworkService().unsubscribe(_onNetworkChanged);
-  }
+  void onProductTap(Product product) {
+    if (_networkService.isConnected.isFalse) {
+      Get.dialog<void>(const NoNetworkDialog());
+      return;
+    }
 
-  void _onNetworkChanged(bool hasConnection) => _hasConnection = hasConnection;
-
-  Future<List<Product>> fetchProducts(IProductsProvider provider) {
-    return provider.fetchProducts();
-  }
-
-  void _onNoNetwork(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('No network', style: TextStyle(fontSize: 16.sp)),
-          content: Text(
-            'You cant perform this action without network connection',
-            style: TextStyle(fontSize: 14.sp),
-          ),
-          actions: [
-            TextButton(
-              onPressed: Navigator.of(context).pop,
-              child: Text('Ok', style: TextStyle(fontSize: 14.sp)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void onCartTap(BuildContext context) {
-    if (!_hasConnection) return _onNoNetwork(context);
-
-    Navigator.of(context).pushNamed(CartView.routeName);
-  }
-
-  void onProductTap({
-    required BuildContext context,
-    required Product product,
-    required VoidCallback callback,
-  }) {
-    if (!_hasConnection) return _onNoNetwork(context);
-
-    Navigator.of(context).pushNamed(
+    Get.toNamed<void>(
       ProductView.routeName,
       arguments: {
         'product': product,
-        'callback': callback,
+        'callback': update,
       },
     );
   }
 
-  Future<void> onAddToCartTap({
-    required BuildContext context,
-    required Product product,
-    required ICartProvider cartProvider,
-    required IUserProvider userProvider,
-  }) async {
-    if (!_hasConnection) return _onNoNetwork(context);
+  Future<void> onAddToCartTap(Product product) async {
+    if (_networkService.isConnected.isFalse) {
+      Get.dialog<void>(const NoNetworkDialog());
+      return;
+    }
 
-    _currentUser ??= await userProvider.fetchUser();
-
-    if (_currentUser is! User) {
+    if (_sessionManager.userHolder.currentUser is! User) {
       Fluttertoast.showToast(msg: 'Failed to add cart item');
       return;
     }
 
-    cartProvider
-        .addCartItem(uuid: _currentUser!.uid, product: product)
-        .then((value) => Fluttertoast.showToast(msg: 'Product added to cart'));
+    await _cartProvider.addCartItem(
+      uuid: _sessionManager.userHolder.currentUser!.uid,
+      product: product,
+    );
+    Fluttertoast.showToast(msg: 'Product added to cart');
   }
 
-  void onAddProductTap({
-    required BuildContext context,
-    required VoidCallback callback,
-  }) {
-    if (!_hasConnection) return _onNoNetwork(context);
+  void onAddProductTap() {
+    if (_networkService.isConnected.isFalse) {
+      Get.dialog<void>(const NoNetworkDialog());
+      return;
+    }
 
-    Navigator.of(context).pushNamed(
+    Get.toNamed<void>(
       ProductView.routeName,
-      arguments: {'callback': callback},
+      arguments: {'callback': update},
     );
+  }
+
+  void onNavigationTap(int index) {
+    if (index == 0) return;
+
+    Get.offNamed<void>(ProfileView.routeName);
   }
 }

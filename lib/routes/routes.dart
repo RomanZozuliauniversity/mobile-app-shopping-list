@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:mobile_app/managers/session/src/session_manager.dart';
+import 'package:get/instance_manager.dart';
+import 'package:mobile_app/managers/session/interface/i_session_manager.dart';
 
 import 'package:mobile_app/views/auth/login/login_view.dart';
 import 'package:mobile_app/views/auth/registration/registration_view.dart';
@@ -13,7 +14,7 @@ class Routes {
   const Routes();
 
   String get initialRoute {
-    final sessionManager = SessionManager();
+    final sessionManager = Get.find<ISessionManager>(tag: 'session-manager');
 
     if (sessionManager.isSessionStarted) {
       Fluttertoast.showToast(

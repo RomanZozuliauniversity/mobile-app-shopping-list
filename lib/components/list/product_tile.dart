@@ -7,8 +7,8 @@ import 'package:mobile_app/models/product/product.dart';
 class ProductTile extends StatelessWidget {
   final Product product;
 
-  final VoidCallback onTap;
-  final VoidCallback onAddToCartTap;
+  final ValueChanged<Product> onTap;
+  final ValueChanged<Product> onAddToCartTap;
 
   const ProductTile({
     required this.product,
@@ -27,7 +27,7 @@ class ProductTile extends StatelessWidget {
       ),
       child: ListTile(
         style: ListTileStyle.list,
-        onTap: onTap,
+        onTap: () => onTap(product),
         leading: CircleAvatar(
           backgroundImage: NetworkImage(product.imageUrl),
           radius: 20.h,
@@ -42,7 +42,7 @@ class ProductTile extends StatelessWidget {
         ),
         trailing: CustomElevatedButton(
           label: '${product.price.toStringAsFixed(1)}\$',
-          onPressed: onAddToCartTap,
+          onPressed: () => onAddToCartTap(product),
         ),
       ),
     );
