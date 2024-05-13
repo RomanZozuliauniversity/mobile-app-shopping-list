@@ -1,3 +1,4 @@
+import 'package:custom_light_plugin/custom_light_plugin.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:mobile_app/components/dialogs/no_network_dialog.dart';
@@ -19,6 +20,8 @@ class HomeController extends GetxController {
   final _sessionManager = Get.find<ISessionManager>(tag: 'session-manager');
 
   Future<List<Product>> get products => _productsProvider.fetchProducts();
+
+  void onToggleLights() => CustomLightPlugin.toggle();
 
   void onCartTap() {
     if (_networkService.isConnected.isFalse) {
